@@ -1,0 +1,44 @@
+---
+- hosts: remote_servers
+  become: yes
+  tasks:
+
+    - name: INSTALL OPENSSL
+      apt:
+        name: openssl
+        state: present
+
+    - name: GENERATE CA KEY
+      openssl_privatekey:
+        path: /etc/ssl/private/ca.key
+        size: 4096
+      register: ca_ssl_key
+
+    - name: GENERATE CA CERTIFICATE
+      openssl_csr:
+        path: /etc/ssl/certs/ca.csr
+        privatekey_path: /etc/ssl/private/ca.key
+        common_name: "CA WITH SSL"
+        country_name: "PH"
+        state_or_province_name: "RIZAL"
+        locality_name: "SAN MATEO"
+        organization_name: "CPE ORGANIZATION"
+        email_address: "qsjempaynado@tip.edu.ph"
+      register: ca_csr
+
+    - name: SELF-SIGNED CA CERTIFICATE
+      openssl_certificate:
+        path: /etc/ssl/certs/ca.crt
+        privatekey_path: /etc/ssl/private/ca.key
+        csr_path: /etc/ssl/certs/ca.csr
+        provider: selfsigned
+        force: true
+
+- hosts: localhost
+  become: yes
+  tasks:
+
+    - name: COPY THE CERTIFICATE
+      copy:
+        src: /etc/ssl/certs/ca-certificates.crt
+        dest: /home/sempaynado/HOA9/CA-record/ca-cert.crt
